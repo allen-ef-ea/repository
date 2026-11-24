@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>底薪核算</title>
+<style>
+:root{
+  --bg:#f7f8fa; --panel:#fff;
+  --line:#e4e7ec; --line2:#f0f2f5;
+  --ink:#101828; --ink2:#475467; --ink3:#98a2b3;
+  --blue:#1570ef; --blue-d:#175cd3; --blue-s:#eff6ff;
+  --red:#d92d20; --red-s:#fef3f2;
+  --green:#067647; --green-s:#ecfdf3;
+  --amber:#b54708; --amber-s:#fffaeb;
+  --r:10px;
+  --sh:0 1px 2px rgba(16,24,40,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+.n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+.top{height:60px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 26px;position:sticky;top:0;z-index:30}
+.brand{display:flex;align-items:center;gap:11px}
+.mark{width:30px;height:30px;border-radius:8px;background:#101828;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+.brand b{display:block;font-size:14px;font-weight:600;line-height:1.25}
+.brand i{display:block;font-style:normal;font-size:10.5px;color:var(--ink3);letter-spacing:.05em;line-height:1.2}
+.top-right{display:flex;align-items:center;gap:12px}
+.period{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink2)}
+input[type=month]{font:inherit;font-size:12.5px;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:5px 9px;background:#fff}
+input[type=month]:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-s)}
+.btn{font:inherit;font-size:12.5px;padding:6px 13px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer}
+.btn:hover{background:#f9fafb;color:var(--ink)}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.pri:hover{background:var(--blue-d)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:20px 26px 70px}
+
+.rulebar{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.rulebar .item{font-size:12.5px;color:var(--ink3);display:flex;align-items:center;gap:6px}
+.rulebar .item b{color:var(--ink);font-weight:500}
+.rulebar .sep{width:1px;height:14px;background:var(--line)}
+.chip{font-size:11.5px;padding:2px 9px;border-radius:20px;background:#f2f4f7;color:var(--ink2);white-space:nowrap}
+.chip b{font-weight:600;color:var(--ink)}
+
+/* 上传 */
+.drop{background:var(--panel);border:1.5px dashed #d0d5dd;border-radius:14px;padding:48px 24px;text-align:center;cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--blue);background:var(--blue-s)}
+.drop-ico{width:46px;height:46px;margin:0 auto 14px;border-radius:12px;background:#f9fafb;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink3)}
+.drop h3{font-size:14px;font-weight:600;margin-bottom:5px}
+.drop p{font-size:12.5px;color:var(--ink3)}
+.drop-btns{margin-top:16px;display:flex;gap:8px;justify-content:center}
+.drop-btns button{font:inherit;font-size:12.5px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer}
+.drop-btns button:hover{color:var(--blue);border-color:#b2ccfb}
+.spec{margin:18px auto 0;padding-top:16px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--ink3);line-height:2;text-align:left;max-width:620px}
+.spec b{color:var(--ink2);font-weight:500}
+.spec code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;background:#f2f4f7;padding:1px 5px;border-radius:4px;color:var(--ink2)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh)}
+.kpi-l{font-size:12px;color:var(--ink2);margin-bottom:7px}
+.kpi-v{font-size:25px;font-weight:600;letter-spacing:-.025em;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi-f{font-size:11.5px;color:var(--ink3);margin-top:5px}
+
+/* tabs */
+.tabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--line2);background:#fcfcfd;overflow-x:auto}
+.tabs button{font:inherit;font-size:12.5px;color:var(--ink2);background:none;border:none;border-bottom:2px solid transparent;padding:7px 13px 9px;cursor:pointer;white-space:nowrap;border-radius:6px 6px 0 0}
+.tabs button:hover{color:var(--ink);background:#f4f6f8}
+.tabs button.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+.tabs button .cnt{font-size:11px;color:var(--ink3);margin-left:4px}
+.tabs button.on .cnt{color:var(--blue)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line2);flex-wrap:wrap}
+.fname{font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:7px;min-width:0}
+.fname b{font-weight:500;color:var(--ink);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fname span{color:var(--ink3)}
+.acts{margin-left:auto;display:flex;gap:8px}
+
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{font-size:11.5px;font-weight:500;color:var(--ink3);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#fcfcfd;white-space:nowrap}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--line2);font-size:13px;vertical-align:middle}
+tbody tr.r{cursor:pointer}
+tbody tr.r:hover,tbody tr.r.open{background:#fafbfc}
+tbody tr:last-child td{border-bottom:none}
+tr.grp td{background:#f7f9fb;padding:8px 14px;border-bottom:1px solid var(--line);border-top:1px solid var(--line)}
+tr.grp .gn{font-size:12.5px;font-weight:600;color:var(--ink)}
+tr.grp .gs{font-size:11.5px;color:var(--ink3);margin-left:10px;font-variant-numeric:tabular-nums}
+.rt{text-align:right}
+.mut{color:var(--ink3)}
+.neg{color:var(--red)}
+.who{display:flex;align-items:center;gap:9px;min-width:0}
+.av{width:27px;height:27px;border-radius:50%;background:#f2f4f7;color:var(--ink2);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:500;flex:0 0 27px}
+.nm{font-weight:500;line-height:1.3;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mt{font-size:11px;color:var(--ink3);line-height:1.3;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 8px;border-radius:20px;background:#f2f4f7;color:var(--ink2);white-space:nowrap}
+.badge.warn{background:var(--amber-s);color:var(--amber)}
+.badge.bad{background:var(--red-s);color:var(--red)}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex:0 0 5px}
+
+tr.det td{padding:0;background:#fcfcfd;border-bottom:1px solid var(--line)}
+.det-in{padding:14px 16px 16px 50px}
+.dl{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line2)}
+.dl:last-child{border-bottom:none}
+.dl .k{font-size:12.5px;color:var(--ink2);min-width:0}
+.dl .k b{font-weight:500;color:var(--ink);display:block}
+.dl .k span{font-size:11px;color:var(--ink3);display:block;margin-top:1px;line-height:1.6}
+.dl .v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;flex:0 0 auto}
+
+.tfoot{padding:11px 16px;font-size:11.5px;color:var(--ink3);line-height:1.9;border-top:1px solid var(--line2);background:#fcfcfd}
+.err{padding:12px 16px;background:var(--red-s);color:var(--red);font-size:12.5px;border-radius:9px;margin-bottom:14px;border:1px solid #fecdca}
+.hide{display:none}
+
+/* 抽屉 */
+.mask{position:fixed;inset:0;background:rgba(16,24,40,.32);opacity:0;pointer-events:none;transition:.18s;z-index:40}
+.mask.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;max-width:94vw;background:var(--panel);transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);z-index:50;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(16,24,40,.1)}
+.drawer.on{transform:none}
+.dr-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.dr-head h2{font-size:15px;font-weight:600}
+.dr-head button{font-size:22px;line-height:1;color:var(--ink3);background:none;border:none;cursor:pointer;padding:0 4px}
+.dr-body{overflow:auto;padding:6px 20px 30px}
+.dr-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;background:#fcfcfd}
+
+.sec{padding:14px 0;border-bottom:1px solid var(--line2)}
+.sec>h3{font-size:13px;font-weight:600;margin-bottom:4px}
+.sec>.desc{font-size:11.5px;color:var(--ink3);margin-bottom:10px;line-height:1.7}
+.formula{font-size:12px;color:var(--ink2);background:#f9fafb;border:1px solid var(--line2);border-radius:8px;padding:9px 12px;line-height:1.9}
+.formula b{color:var(--ink);font-weight:500}
+
+details.dept{border:1px solid var(--line);border-radius:9px;margin-bottom:10px;overflow:hidden}
+details.dept>summary{list-style:none;cursor:pointer;padding:10px 13px;background:#fcfcfd;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600}
+details.dept>summary::-webkit-details-marker{display:none}
+details.dept>summary::before{content:"▸";color:var(--ink3);font-size:11px;transition:.15s}
+details.dept[open]>summary::before{transform:rotate(90deg)}
+details.dept>summary .meta{margin-left:auto;font-size:11.5px;color:var(--ink3);font-weight:400}
+details.dept>summary .del{font-size:11.5px;color:var(--ink3);background:none;border:none;cursor:pointer;padding:2px 5px}
+details.dept>summary .del:hover{color:var(--red)}
+.dept-body{padding:12px 13px 14px;border-top:1px solid var(--line2)}
+.dept-body h4{font-size:11px;color:var(--ink3);letter-spacing:.06em;margin:10px 0 8px}
+.dept-body h4:first-child{margin-top:0}
+
+.kv{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.kv .lab{font-size:12.5px;color:var(--ink2);width:96px;flex:0 0 96px}
+.kv input[type=text]{width:92px;flex:0 0 92px}
+.kv input[type=number]{width:104px;flex:0 0 104px}
+.kv .unit{font-size:11.5px;color:var(--ink3)}
+.kv .del{margin-left:auto;font-size:12px;color:var(--ink3);background:none;border:none;cursor:pointer;padding:2px 4px}
+.kv .del:hover{color:var(--red)}
+.add{font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 0}
+input[type=text],input[type=number],select{font:inherit;font-size:12.5px;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:5px 8px;background:#fff;-moz-appearance:textfield;appearance:auto}
+input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-s)}
+select{cursor:pointer}
+
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}table{table-layout:auto}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="mark">薪</span>
+    <div><b>底薪核算</b><i>BASEPAY</i></div>
+  </div>
+  <div class="top-right">
+    <label class="period">核算月份 <input type="month" id="period" value="2026-11"></label>
+    <button class="btn" id="btnRule">规则设置</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="rulebar" id="rulebar"></div>
+  <div id="err" class="err hide"></div>
+
+  <section id="drop" class="drop">
+    <div class="drop-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+    </div>
+    <h3>把考勤表拖进来</h3>
+    <p>支持 .xlsx / .xls / .csv，也可以点击选择文件</p>
+    <div class="drop-btns">
+      <button id="btnTpl">下载模板</button>
+      <button id="btnDemo">载入示例数据</button>
+    </div>
+    <div class="spec">
+      <b>员工表</b>　<code>工号</code> <code>姓名</code> <code>部门</code> <code>职级</code>　可选：<code>城市</code> <code>用工类型</code> <code>时薪</code> <code>入职日期</code> <code>离职日期</code><br>
+      <b>考勤表</b>　<code>工号</code> <code>日期</code> <code>类型</code> <code>天数</code>　可选：<code>迟到分钟</code> <code>工时</code><br>
+      部门决定用哪套薪级表和扣减规则；月薪不用填，由「部门 + 职级」自动带出。
+    </div>
+  </section>
+
+  <section id="result" class="hide">
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <div class="bar">
+        <div class="fname" id="fname"></div>
+        <div class="acts">
+          <button class="btn pri" id="btnExport">导出 Excel</button>
+          <button class="btn" id="btnAgain">换一个文件</button>
+        </div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div id="tableWrap"></div>
+      <div class="tfoot" id="tfoot"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer">
+  <div class="dr-head"><h2>核算规则</h2><button id="drClose">×</button></div>
+  <div class="dr-body">
+
+    <div class="sec">
+      <h3>计薪天数（全局）</h3>
+      <p class="desc">计薪天数 = 应出勤 + 法定节假日，按核算月份自动计算。日薪 = 岗位薪资 ÷ 计薪天数。</p>
+      <div class="formula" id="payDaysBox"></div>
+    </div>
+
+    <div class="sec">
+      <h3>城市最低工资（全局）</h3>
+      <p class="desc">病假工资 = 当地最低工资 × 比例 ÷ 计薪天数。跟地域有关，所有部门共用。</p>
+      <div id="cityList"></div>
+      <button class="add" data-add-city>+ 增加城市</button>
+    </div>
+
+    <div class="sec">
+      <h3>部门规则</h3>
+      <p class="desc">每个部门有自己的薪级表和扣减参数。员工表里的「部门」决定用哪一套；匹配不上的落到「未分部门」。</p>
+      <div id="deptList"></div>
+      <button class="add" data-add-dept>+ 增加部门</button>
+    </div>
+
+  </div>
+  <div class="dr-foot">
+    <button class="btn" id="btnResetRule">恢复默认</button>
+    <button class="btn pri" id="btnSaveRule">保存规则</button>
+  </div>
+</aside>
+
+<input type="file" id="file" accept=".xlsx,.xls,.csv" class="hide">
+
+<script src="assets/xlsx.full.min.js"></script>
+<script src="assets/calc.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const money = (n) => (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+const int0 = (n) => Math.round(n).toLocaleString('zh-CN');
+const STORE_KEY = 'basepay.rule.v2';
+const FB = '未分部门';
+
+const state = { employees: [], records: [], fileName: '', open: null, loaded: false, scope: 'all', rule: loadRule() };
+
+function loadRule() {
+  try {
+    const s = localStorage.getItem(STORE_KEY);
+    if (s) {
+      const r = JSON.parse(s);
+      if (r && r.depts && r.cities) return r;
+    }
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(BP.DEFAULT_RULE));
+}
+function saveRule() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state.rule)); } catch (e) {} }
+
+/* ---------------- 表头映射 ---------------- */
+const ALIAS = {
+  id: ['工号','员工编号','人员编号','编号','员工id','empno'],
+  name: ['姓名','名字','员工姓名','人员姓名','name'],
+  dept: ['部门','所属部门','部门名称','团队','dept'],
+  grade: ['职级','薪级','岗位职级','级别','等级','grade'],
+  city: ['城市','工作城市','参保城市','地区','city'],
+  empType: ['用工类型','员工类型','人员类型','用工性质','雇佣类型'],
+  hourRate: ['时薪','小时工资','时薪标准'],
+  salary: ['月薪','底薪','基本工资','固定工资'],
+  hireDate: ['入职日期','入职时间','入司日期'],
+  resignDate: ['离职日期','离职时间'],
+  date: ['日期','考勤日期','打卡日期','date'],
+  type: ['类型','考勤状态','请假类型','状态','异常类型'],
+  days: ['天数','请假天数','时长'],
+  late: ['迟到分钟','迟到(分钟)','迟到时长','迟到','早退分钟'],
+  hours: ['工时','小时','实际工时','出勤工时'],
+};
+const nk = (k) => String(k == null ? '' : k).trim().toLowerCase().replace(/[\s（）()：:·．.]/g, '');
+
+function detectCols(headers) {
+  const list = headers.map((h) => ({ raw: h, n: nk(h) }));
+  const map = {};
+  Object.keys(ALIAS).forEach((f) => {
+    for (const a of ALIAS[f]) {
+      const hit = list.find((x) => x.n === nk(a));
+      if (hit) { map[f] = hit.raw; return; }
+    }
+  });
+  Object.keys(ALIAS).forEach((f) => {
+    if (map[f]) return;
+    for (const a of ALIAS[f]) {
+      const an = nk(a);
+      const hit = list.find((x) => x.n && (x.n.includes(an) || an.includes(x.n)));
+      if (hit) { map[f] = hit.raw; return; }
+    }
+  });
+  return map;
+}
+
+/* ---------------- 值解析 ---------------- */
+function toDate(v) {
+  if (v == null || v === '') return null;
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === 'number') { const d = XLSX.SSF.parse_date_code(v); if (d) return new Date(d.y, d.m - 1, d.d); }
+  const s = String(v).trim().replace(/[年月]/g, '-').replace(/日/g, '').replace(/[\/.]/g, '-');
+  let m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = s.match(/^(\d{1,2})-(\d{1,2})$/);
+  if (m) return new Date(2026, +m[1] - 1, +m[2]);
+  return null;
+}
+const ymd = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const toNum = (v) => { const n = Number(String(v == null ? '' : v).replace(/[^\d.\-]/g, '')); return isNaN(n) ? 0 : n; };
+
+const TYPES = [
+  [/事假/, '事假'], [/病假/, '病假'], [/旷工/, '旷工'],
+  [/缺卡|漏卡|未打卡|无打卡/, '缺卡'], [/迟到/, '迟到'], [/早退/, '早退'],
+  [/年假|年休/, '年假'], [/调休/, '调休'],
+  [/婚假|丧假|产假|陪产|育儿|哺乳|探亲/, '带薪假'],
+  [/加班|加点/, '加班'],
+  [/法定|节假日/, '法定节假日'], [/休息|周末/, '休息日'],
+  [/出差|外勤|公出/, '出差'], [/出勤|正常|已打卡/, '出勤'],
+];
+const normType = (v) => {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '出勤';
+  for (const [re, n] of TYPES) if (re.test(s)) return n;
+  return s;
+};
+const isIntern = (v) => /实习|intern/i.test(String(v || ''));
+
+/* ---------------- 解析文件 ---------------- */
+function readFile(file) {
+  const isCsv = /\.csv$/i.test(file.name);
+  const rd = new FileReader();
+  rd.onload = (e) => {
+    try {
+      const buf = e.target.result;
+      const wb = isCsv
+        ? XLSX.read(new TextDecoder('utf-8').decode(buf), { type: 'string', cellDates: true })
+        : XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
+
+      const employees = [], records = [], seen = {};
+
+      wb.SheetNames.forEach((sn) => {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { defval: '', raw: false, dateNF: 'yyyy-mm-dd' });
+        if (!rows.length) return;
+        const c = detectCols(Object.keys(rows[0]));
+
+        rows.forEach((r) => {
+          const id = String(r[c.id] || '').trim() || String(r[c.name] || '').trim();
+          if (!id) return;
+
+          const looksEmp = c.grade || c.salary || c.hourRate;
+          if (looksEmp && !seen[id]) {
+            seen[id] = true;
+            const hd = c.hireDate ? toDate(r[c.hireDate]) : null;
+            const rd2 = c.resignDate ? toDate(r[c.resignDate]) : null;
+            employees.push({
+              id,
+              name: String(r[c.name] || id).trim(),
+              dept: c.dept ? String(r[c.dept] || '').trim() : '',
+              grade: c.grade ? String(r[c.grade] || '').trim().toUpperCase() : '',
+              city: c.city ? String(r[c.city] || '').trim() : '',
+              kind: c.empType && isIntern(r[c.empType]) ? 'intern' : 'staff',
+              hourRate: c.hourRate ? toNum(r[c.hourRate]) : 0,
+              hireDate: hd ? ymd(hd) : null,
+              resignDate: rd2 ? ymd(rd2) : null,
+            });
+          }
+
+          if (c.date && c.type) {
+            const d = toDate(r[c.date]);
+            if (!d) return;
+            records.push({
+              id, date: ymd(d), type: normType(r[c.type]),
+              days: c.days ? toNum(r[c.days]) : 1,
+              late: c.late ? toNum(r[c.late]) : 0,
+              hours: c.hours ? toNum(r[c.hours]) : 0,
+            });
+          }
+        });
+      });
+
+      if (!employees.length) throw new Error('没有读到员工。员工表需要「工号 / 姓名 / 部门 / 职级」四列。');
+      const noDept = employees.filter((e) => !e.dept).length;
+      if (noDept) showErr(`有 ${noDept} 人没有填「部门」，会按「未分部门」的规则算。`);
+
+      state.employees = employees;
+      state.records = records;
+      state.fileName = file.name;
+      state.open = null;
+      state.loaded = true;
+      state.scope = 'all';
+      render();
+    } catch (err) {
+      showErr(err.message || '文件解析失败');
+    }
+  };
+  rd.onerror = () => showErr('文件读取失败');
+  rd.readAsArrayBuffer(file);
+}
+
+function showErr(msg) {
+  const el = $('err');
+  el.textContent = msg;
+  el.classList.remove('hide');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.add('hide'), 8000);
+}
+
+/* ---------------- 规则条 ---------------- */
+function renderRulebar() {
+  const rule = state.rule;
+  const p = $('period').value;
+  const chips = Object.keys(rule.depts).filter((d) => d !== FB).map((d) => {
+    const g = rule.depts[d].grades;
+    const txt = Object.keys(g).sort().map((k) => `${k} ${int0(g[k])}`).join(' / ') || '未配';
+    return `<span class="chip">${d}<b style="margin-left:6px">${txt}</b></span>`;
+  }).join('');
+  const cities = Object.keys(rule.cities).map((k) => `${k} ${int0(rule.cities[k])}`).join(' / ');
+  $('rulebar').innerHTML = `
+    <span class="item">计薪天数<b>${BP.payDaysOf(p)} 天</b></span>
+    <span class="sep"></span>
+    ${chips}
+    <span class="sep"></span>
+    <span class="item">最低工资<b>${cities}</b></span>`;
+}
+
+/* ---------------- 渲染 ---------------- */
+function render() {
+  renderRulebar();
+  if (!state.loaded) return;
+  $('drop').classList.add('hide');
+  $('result').classList.remove('hide');
+
+  const res = BP.compute(state.employees, state.records, { period: $('period').value, rule: state.rule });
+  const pd = res.cfg.payDays;
+
+  // scope 失效则回落
+  if (state.scope !== 'all' && !res.depts.some((d) => d.dept === state.scope)) state.scope = 'all';
+
+  const scoped = state.scope === 'all'
+    ? { rows: res.rows, totals: res.totals }
+    : res.depts.find((d) => d.dept === state.scope);
+
+  const t = scoped.totals;
+
+  $('kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-l">应发合计</div><div class="kpi-v">${money(t.base)}</div>
+      <div class="kpi-f">${t.people} 人 · ${state.scope === 'all' ? '全部部门' : state.scope}</div></div>
+    <div class="kpi"><div class="kpi-l">扣减合计</div><div class="kpi-v" style="color:var(--red)">${t.deduct ? '−' + money(Math.abs(t.deduct)) : '0.00'}</div>
+      <div class="kpi-f">请假、旷工、迟到</div></div>
+    <div class="kpi"><div class="kpi-l">实发合计</div><div class="kpi-v">${money(t.net)}</div>
+      <div class="kpi-f">按 ${pd} 天计薪</div></div>
+    <div class="kpi"><div class="kpi-l">待确认</div><div class="kpi-v" style="color:${t.abnormal ? 'var(--amber)' : 'var(--green)'}">${t.abnormal}</div>
+      <div class="kpi-f">${t.abnormal ? '职级未配薪或结果为负' : '全部可锁定'}</div></div>`;
+
+  $('fname').innerHTML = `<b>${state.fileName}</b><span>${state.employees.length} 人 · ${state.records.length} 条记录</span>`;
+
+  $('tabs').innerHTML = `
+    <button data-scope="all" class="${state.scope === 'all' ? 'on' : ''}">全部<span class="cnt">${res.totals.people}</span></button>
+    ${res.depts.map((d) => `<button data-scope="${d.dept}" class="${state.scope === d.dept ? 'on' : ''}">${d.dept}<span class="cnt">${d.totals.people}</span></button>`).join('')}`;
+
+  const rowHtml = (r) => {
+    const open = state.open === r.id;
+    return `
+    <tr class="r ${open ? 'open' : ''}" data-id="${r.id}">
+      <td><div class="who">
+        <span class="av">${(r.name || '?').slice(-2, -1) || (r.name || '?')[0]}</span>
+        <span style="min-width:0">
+          <span class="nm">${r.name}</span>
+          <span class="mt">${r.id}${r.kind === 'intern' ? ' · 实习' : (r.grade ? ' · ' + r.grade : '')}${r.city ? ' · ' + r.city : ''}</span>
+        </span>
+      </div></td>
+      <td class="rt n mut">${r.salary ? money(r.salary) : '—'}</td>
+      <td class="rt n mut">${r.kind === 'intern' ? money(r.dayRate) + '/h' : money(r.dayRate)}</td>
+      <td class="rt n">${money(r.base)}</td>
+      <td class="rt n ${r.deduct ? 'neg' : 'mut'}">${r.deduct ? '−' + money(Math.abs(r.deduct)) : '—'}</td>
+      <td class="rt n" style="font-weight:600">${money(r.net)}</td>
+      <td class="mut" style="font-size:12px">${r.summary.length ? r.summary.join(' · ') : '—'}</td>
+      <td>${r.flag ? `<span class="badge ${r.flag.level}"><span class="dot"></span>${r.flag.text}</span>` : ''}</td>
+    </tr>
+    ${open ? `<tr class="det"><td colspan="8"><div class="det-in">
+      ${r.lines.map((l) => `<div class="dl">
+        <span class="k"><b>${l.item}</b><span>${l.formula}</span></span>
+        <span class="v" style="color:${l.amount < 0 ? 'var(--red)' : l.kind === 'add' ? 'var(--green)' : 'var(--ink)'}">${l.amount > 0 ? '+' : ''}${money(l.amount)}</span>
+      </div>`).join('')}
+      <div class="dl" style="margin-top:4px;border-top:1px solid var(--line);padding-top:9px">
+        <span class="k"><b>实发底薪</b><span>应发 ${money(r.base)} − 扣减 ${money(Math.abs(r.deduct))}</span></span>
+        <span class="v" style="font-size:14px">${money(r.net)}</span>
+      </div>
+    </div></td></tr>` : ''}`;
+  };
+
+  let body;
+  if (state.scope === 'all') {
+    body = res.depts.map((d) => `
+      <tr class="grp"><td colspan="8">
+        <span class="gn">${d.dept}</span>
+        <span class="gs">${d.totals.people} 人　应发 ${money(d.totals.base)}　扣减 ${d.totals.deduct ? '−' + money(Math.abs(d.totals.deduct)) : '0.00'}　实发 ${money(d.totals.net)}</span>
+      </td></tr>
+      ${d.rows.map(rowHtml).join('')}`).join('');
+  } else {
+    body = scoped.rows.map(rowHtml).join('');
+  }
+
+  $('tableWrap').innerHTML = `
+  <table>
+    <thead><tr>
+      <th style="width:22%">员工</th>
+      <th class="rt" style="width:104px">岗位薪资</th>
+      <th class="rt" style="width:100px">日薪</th>
+      <th class="rt" style="width:104px">应发</th>
+      <th class="rt" style="width:104px">扣减</th>
+      <th class="rt" style="width:112px">实发</th>
+      <th style="width:150px">本月考勤</th>
+      <th style="width:92px">状态</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>`;
+
+  $('tfoot').innerHTML =
+    `计薪天数 ${pd} 天 = 应出勤 ${res.cfg.workdays} + 法定节假日 ${BP.holidayCountOf(res.cfg.period)}　·　日薪 = 岗位薪资 ÷ ${pd}　·　点击任意一行查看逐项算式`;
+
+  document.querySelectorAll('#tabs button').forEach((b) => {
+    b.onclick = () => { state.scope = b.dataset.scope; render(); };
+  });
+  document.querySelectorAll('tr.r').forEach((tr) => {
+    tr.onclick = () => { state.open = state.open === tr.dataset.id ? null : tr.dataset.id; render(); };
+  });
+}
+
+/* ---------------- 规则抽屉 ---------------- */
+function openDrawer() { $('drawer').classList.add('on'); $('mask').classList.add('on'); renderRuleForm(); }
+function closeDrawer() { $('drawer').classList.remove('on'); $('mask').classList.remove('on'); }
+
+function renderRuleForm() {
+  const rule = state.rule;
+  const p = $('period').value;
+  $('payDaysBox').innerHTML =
+    `应出勤 <b>${BP.workdaysOf(p)}</b> 天 ＋ 法定节假日 <b>${BP.holidayCountOf(p)}</b> 天 ＝ 计薪天数 <b>${BP.payDaysOf(p)}</b> 天<br>` +
+    `日薪 ＝ 岗位薪资 ÷ ${BP.payDaysOf(p)}`;
+
+  $('cityList').innerHTML = Object.keys(rule.cities).map((k) => `
+    <div class="kv" data-kind="city">
+      <input type="text" class="k-in" value="${k}">
+      <input type="number" class="v-in" value="${rule.cities[k]}" step="10">
+      <span class="unit">元 / 月</span>
+      <button class="del">删除</button>
+    </div>`).join('');
+
+  $('deptList').innerHTML = Object.keys(rule.depts).map((d, i) => {
+    const dr = rule.depts[d];
+    const isFb = d === FB;
+    return `
+    <details class="dept" ${i === 0 ? 'open' : ''} data-dept="${d}">
+      <summary>
+        ${d}
+        <span class="meta">${Object.keys(dr.grades).length} 个职级${isFb ? ' · 兜底' : ''}</span>
+        ${isFb ? '' : '<button class="del" data-del-dept="' + d + '">删除</button>'}
+      </summary>
+      <div class="dept-body">
+        <div class="kv">
+          <span class="lab">部门名称</span>
+          <input type="text" class="d-name" value="${d}" ${isFb ? 'disabled' : ''} style="width:130px;flex:0 0 130px">
+        </div>
+        <h4>薪级表</h4>
+        ${Object.keys(dr.grades).sort().map((k) => `
+          <div class="kv" data-kind="grade">
+            <input type="text" class="g-k" value="${k}">
+            <input type="number" class="g-v" value="${dr.grades[k]}" step="500">
+            <span class="unit">元 / 月</span>
+            <button class="del">删除</button>
+          </div>`).join('')}
+        <button class="add" data-add-grade="${d}">+ 增加职级</button>
+        <h4>扣减规则</h4>
+        <div class="kv"><span class="lab">事假扣减</span>
+          <select class="p1">
+            <option value="1" ${dr.personalRatio == 1 ? 'selected' : ''}>本人日薪 100%</option>
+            <option value="0.8" ${dr.personalRatio == 0.8 ? 'selected' : ''}>本人日薪 80%</option>
+            <option value="0.5" ${dr.personalRatio == 0.5 ? 'selected' : ''}>本人日薪 50%</option>
+            <option value="0" ${dr.personalRatio == 0 ? 'selected' : ''}>不扣</option>
+          </select>
+        </div>
+        <div class="kv"><span class="lab">病假比例</span>
+          <select class="p2">
+            <option value="0.8" ${dr.sickRatio == 0.8 ? 'selected' : ''}>最低工资 80%</option>
+            <option value="0.6" ${dr.sickRatio == 0.6 ? 'selected' : ''}>最低工资 60%</option>
+            <option value="1" ${dr.sickRatio == 1 ? 'selected' : ''}>最低工资 100%</option>
+          </select>
+        </div>
+        <div class="kv"><span class="lab">旷工扣减</span>
+          <select class="p3">
+            <option value="1" ${dr.absenceMultiple == 1 ? 'selected' : ''}>1 倍</option>
+            <option value="2" ${dr.absenceMultiple == 2 ? 'selected' : ''}>2 倍</option>
+            <option value="3" ${dr.absenceMultiple == 3 ? 'selected' : ''}>3 倍</option>
+          </select>
+        </div>
+        <div class="kv"><span class="lab">缺卡未补</span>
+          <select class="p4">
+            <option value="1" ${dr.missingAsAbsence ? 'selected' : ''}>视为旷工</option>
+            <option value="0" ${!dr.missingAsAbsence ? 'selected' : ''}>不扣，仅提示</option>
+          </select>
+        </div>
+        <div class="kv"><span class="lab">迟到 / 早退</span>
+          <select class="p5">
+            <option value="perTime" ${dr.lateMode === 'perTime' ? 'selected' : ''}>按次扣款</option>
+            <option value="perMinute" ${dr.lateMode === 'perMinute' ? 'selected' : ''}>按分钟折算</option>
+            <option value="none" ${dr.lateMode === 'none' ? 'selected' : ''}>不扣</option>
+          </select>
+          <input type="number" class="p6" value="${dr.lateFee}" min="0" step="10" style="width:84px;flex:0 0 84px">
+          <span class="unit">元 / 次</span>
+        </div>
+        <div class="kv"><span class="lab">入离职折算</span>
+          <select class="p7">
+            <option value="forward" ${dr.prorate === 'forward' ? 'selected' : ''}>按在职天数（正算）</option>
+            <option value="backward" ${dr.prorate === 'backward' ? 'selected' : ''}>按未在职扣除（反算）</option>
+          </select>
+        </div>
+      </div>
+    </details>`;
+  }).join('');
+
+  // 删除绑定
+  document.querySelectorAll('.kv .del').forEach((b) => {
+    b.onclick = () => {
+      const kv = b.closest('.kv');
+      const box = b.closest('.dept');
+      collectRule();
+      if (kv.dataset.kind === 'city') {
+        const key = kv.querySelector('.k-in').value.trim();
+        delete state.rule.cities[key];
+      } else if (box) {
+        const d = box.dataset.dept;
+        const key = kv.querySelector('.g-k').value.trim().toUpperCase();
+        delete state.rule.depts[d].grades[key];
+      }
+      renderRuleForm();
+    };
+  });
+  document.querySelectorAll('[data-del-dept]').forEach((b) => {
+    b.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      collectRule();
+      delete state.rule.depts[b.dataset.delDept];
+      renderRuleForm();
+    };
+  });
+  document.querySelectorAll('[data-add-grade]').forEach((b) => {
+    b.onclick = () => {
+      collectRule();
+      const d = b.dataset.addGrade;
+      const n = Object.keys(state.rule.depts[d].grades).length + 1;
+      state.rule.depts[d].grades['N' + n] = 0;
+      renderRuleForm();
+    };
+  });
+  closeDrawer._addDeptBound = true;
+}
+
+function collectRule() {
+  const rule = state.rule;
+
+  const cities = {};
+  document.querySelectorAll('.kv[data-kind="city"]').forEach((kv) => {
+    const k = kv.querySelector('.k-in').value.trim();
+    const v = Number(kv.querySelector('.v-in').value) || 0;
+    if (k) cities[k] = v;
+  });
+  rule.cities = cities;
+
+  const depts = {};
+  document.querySelectorAll('details.dept').forEach((box) => {
+    const oldKey = box.dataset.dept;
+    const nameEl = box.querySelector('.d-name');
+    const newKey = (nameEl && nameEl.value.trim()) || oldKey;
+    const grades = {};
+    box.querySelectorAll('.kv[data-kind="grade"]').forEach((kv) => {
+      const k = kv.querySelector('.g-k').value.trim().toUpperCase();
+      const v = Number(kv.querySelector('.g-v').value) || 0;
+      if (k) grades[k] = v;
+    });
+    depts[newKey] = {
+      grades,
+      personalRatio: Number(box.querySelector('.p1').value),
+      sickRatio: Number(box.querySelector('.p2').value),
+      absenceMultiple: Number(box.querySelector('.p3').value),
+      missingAsAbsence: box.querySelector('.p4').value === '1',
+      lateMode: box.querySelector('.p5').value,
+      lateFee: Number(box.querySelector('.p6').value) || 0,
+      prorate: box.querySelector('.p7').value,
+    };
+  });
+  rule.depts = depts;
+}
+
+/* ---------------- 导出 ---------------- */
+function exportXlsx() {
+  const res = BP.compute(state.employees, state.records, { period: $('period').value, rule: state.rule });
+  const sum = res.rows.map((r) => ({
+    部门: r.dept, 工号: r.id, 姓名: r.name, 职级: r.grade, 城市: r.city,
+    岗位薪资: r.salary, 日薪: r.dayRate,
+    应发: r.base, 扣减: r.deduct, 实发: r.net,
+    考勤: r.summary.join(' / '), 状态: r.flag ? r.flag.text : '',
+  }));
+  const det = [];
+  res.rows.forEach((r) => r.lines.forEach((l) => det.push({
+    部门: r.dept, 工号: r.id, 姓名: r.name, 项目: l.item, 金额: l.amount, 算式: l.formula,
+  })));
+  const dep = res.depts.map((d) => ({
+    部门: d.dept, 人数: d.totals.people, 应发: d.totals.base, 扣减: d.totals.deduct, 实发: d.totals.net,
+  }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sum), '核算汇总');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(det), '明细');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dep), '部门汇总');
+  const base = (state.fileName || '核算').replace(/\.[^.]+$/, '');
+  XLSX.writeFile(wb, `底薪核算_${base}_${$('period').value}.xlsx`);
+}
+
+/* ---------------- 模板 / 示例 ---------------- */
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const emp = [
+    { 工号:'A001', 姓名:'张伟', 部门:'算法部', 职级:'P2', 城市:'上海', 用工类型:'正式', 时薪:'', 入职日期:'2023-03-01', 离职日期:'' },
+    { 工号:'A002', 姓名:'李娜', 部门:'算法部', 职级:'P3', 城市:'上海', 用工类型:'正式', 时薪:'', 入职日期:'2022-08-15', 离职日期:'' },
+    { 工号:'B001', 姓名:'王强', 部门:'销售部', 职级:'S1', 城市:'上海', 用工类型:'正式', 时薪:'', 入职日期:'2023-07-01', 离职日期:'' },
+    { 工号:'B002', 姓名:'陈静', 部门:'销售部', 职级:'S2', 城市:'苏州', 用工类型:'正式', 时薪:'', 入职日期:'2021-03-22', 离职日期:'' },
+    { 工号:'C001', 姓名:'小周', 部门:'算法部', 职级:'', 城市:'上海', 用工类型:'实习', 时薪:25, 入职日期:'2026-09-01', 离职日期:'' },
+  ];
+  const cl = [
+    { 工号:'A001', 日期:'2026-11-10', 类型:'事假', 天数:1, 迟到分钟:0, 工时:0 },
+    { 工号:'A002', 日期:'2026-11-17', 类型:'病假', 天数:2, 迟到分钟:0, 工时:0 },
+    { 工号:'B001', 日期:'2026-11-05', 类型:'迟到', 天数:0, 迟到分钟:32, 工时:0 },
+    { 工号:'B002', 日期:'2026-11-20', 类型:'事假', 天数:1, 迟到分钟:0, 工时:0 },
+    { 工号:'C001', 日期:'2026-11-01', 类型:'出勤', 天数:0, 迟到分钟:0, 工时:184 },
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(emp), '员工');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cl), '考勤');
+  XLSX.writeFile(wb, '底薪核算模板.xlsx');
+}
+
+function loadDemo() {
+  state.fileName = '示例数据 · 2026 年 11 月';
+  state.employees = [
+    { id:'A001', name:'张伟', dept:'算法部', grade:'P1', city:'上海', kind:'staff', hireDate:'2023-03-01' },
+    { id:'A002', name:'李娜', dept:'算法部', grade:'P2', city:'上海', kind:'staff', hireDate:'2022-08-15' },
+    { id:'A003', name:'孙浩', dept:'算法部', grade:'P3', city:'上海', kind:'staff', hireDate:'2021-05-10' },
+    { id:'A004', name:'刘洋', dept:'算法部', grade:'P4', city:'上海', kind:'staff', hireDate:'2020-07-06' },
+    { id:'A005', name:'周杰', dept:'算法部', grade:'P2', city:'苏州', kind:'staff', hireDate:'2023-11-01' },
+    { id:'B001', name:'王强', dept:'销售部', grade:'S1', city:'上海', kind:'staff', hireDate:'2023-07-01' },
+    { id:'B002', name:'陈静', dept:'销售部', grade:'S2', city:'上海', kind:'staff', hireDate:'2021-03-22' },
+    { id:'B003', name:'赵敏', dept:'销售部', grade:'S1', city:'上海', kind:'staff', hireDate:'2026-11-18' },
+    { id:'B004', name:'郑爽', dept:'销售部', grade:'S3', city:'苏州', kind:'staff', hireDate:'2022-04-18' },
+    { id:'C001', name:'小周', dept:'算法部', grade:'', city:'上海', kind:'intern', hourRate:25 },
+  ];
+  const rec = [];
+  const p = (id, date, type, days, late, hours) =>
+    rec.push({ id, date, type, days: days || 0, late: late || 0, hours: hours || 0 });
+  p('A001', '2026-11-10', '事假', 1);
+  p('A002', '2026-11-17', '病假', 2);
+  p('A003', '2026-11-12', '旷工', 1);
+  p('A005', '2026-11-06', '病假', 1);
+  p('B001', '2026-11-05', '迟到', 0, 32);
+  p('B002', '2026-11-20', '事假', 1);
+  p('B003', '2026-11-21', '事假', 1);
+  p('B004', '2026-11-19', '病假', 3);
+  p('C001', '2026-11-01', '出勤', 0, 0, 96);
+  p('C001', '2026-11-16', '出勤', 0, 0, 88);
+  state.records = rec;
+  state.open = null;
+  state.scope = 'all';
+  state.loaded = true;
+  render();
+}
+
+/* ---------------- 事件 ---------------- */
+$('period').addEventListener('change', () => { state.rule = state.rule; if (state.loaded) render(); else renderRulebar(); });
+$('btnRule').onclick = openDrawer;
+$('drClose').onclick = closeDrawer;
+$('mask').onclick = closeDrawer;
+$('btnSaveRule').onclick = () => { collectRule(); saveRule(); closeDrawer(); render(); };
+$('btnResetRule').onclick = () => {
+  state.rule = JSON.parse(JSON.stringify(BP.DEFAULT_RULE));
+  state.scope = 'all';
+  renderRuleForm();
+};
+document.querySelector('[data-add-city]').onclick = () => {
+  collectRule();
+  state.rule.cities['新城市' + (Object.keys(state.rule.cities).length + 1)] = 0;
+  renderRuleForm();
+};
+document.querySelector('[data-add-dept]').onclick = () => {
+  collectRule();
+  const n = Object.keys(state.rule.depts).length;
+  let name = '新部门' + n;
+  while (state.rule.depts[name]) name += '_';
+  state.rule.depts[name] = BP.deptRule({ P1: 8000, P2: 12000 });
+  renderRuleForm();
+};
+
+$('drop').onclick = () => $('file').click();
+$('btnTpl').onclick = (e) => { e.stopPropagation(); downloadTemplate(); };
+$('btnDemo').onclick = (e) => { e.stopPropagation(); loadDemo(); };
+$('btnAgain').onclick = () => { $('result').classList.add('hide'); $('drop').classList.remove('hide'); $('file').value = ''; state.loaded = false; renderRulebar(); };
+$('btnExport').onclick = exportXlsx;
+$('file').onchange = (e) => { const f = e.target.files[0]; if (f) readFile(f); };
+['dragenter','dragover'].forEach((ev) => $('drop').addEventListener(ev, (e) => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave','drop'].forEach((ev) => $('drop').addEventListener(ev, (e) => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+
+renderRulebar();
+if (/[?&]demo/.test(location.search)) loadDemo();
+</script>
+</body>
+</html>
